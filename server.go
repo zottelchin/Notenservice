@@ -16,7 +16,7 @@ import (
 var saveState []ovgunoten.Klausur
 
 func main() {
-	viper.SetConfigFile("config.yml")
+	viper.SetConfigFile("/var/noten/config.yml")
 	err := viper.ReadInConfig()
 	if err != nil {
 		fmt.Println(err.Error())
@@ -27,16 +27,16 @@ func main() {
 		fmt.Println("Starting Webserver...")
 		gin.SetMode(gin.ReleaseMode)
 		router := gin.Default()
-		router.StaticFile("/", "frontend/notenuebersicht.html")
-		router.StaticFile("/milligram.min.css", "frontend/milligram.min.css")
-		router.StaticFile("/vue.min.js", "frontend/vue.min.js")
+		router.StaticFile("/", "/var/noten/frontend/notenuebersicht.html")
+		router.StaticFile("/milligram.min.css", "/var/noten/frontend/milligram.min.css")
+		router.StaticFile("/vue.min.js", "/var/noten/frontend/vue.min.js")
 		//router.GET("/von/:account/:password", func(c *gin.Context) {
 		//	c.JSON(200, ovgunoten.InsertToDB(c.Param("account"), c.Param("password")))
 		//})
 		router.GET("/von/me", func(c *gin.Context) {
 			c.JSON(200, saveState)
 		})
-		router.Run(":1234")
+		router.Run(":3412")
 	}
 }
 
