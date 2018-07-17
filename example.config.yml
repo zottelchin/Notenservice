@@ -1,0 +1,11 @@
+lsf: 
+    user: "user"
+    password: "test123"
+mail: 
+    sender: "bla@blub.blop"
+    reciver: "test@note.de"
+    password: "geheim"
+    smtpServer: "host.de"
+    smtpPort: "587"
+#Setzte diese Variable auf true um einen Notenspiegel zu hosten
+webpage: false

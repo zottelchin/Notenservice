@@ -1,0 +1,96 @@
+<html lang="en">
+
+<head>
+        <title>Noten&uuml;bersicht</title>
+        <link rel="stylesheet" href="milligram.min.css">
+        <link rel="stylesheet" target="blank" href="https://fonts.googleapis.com/css?family=Roboto:300,300italic,700,700italic">
+        <link rel="stylesheet" href="//cdn.rawgit.com/necolas/normalize.css/master/normalize.css">
+        <script src="vue.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/vue-resource@1.5.0"></script>
+        <meta charset="utf-8" />
+</head>
+
+<body>
+    <div class="container">
+        
+
+        <div id="app">
+            <h2>Noten&uuml;bersicht</h2>
+            <table>
+                <tr>
+                    <th>
+                        {{ headline.Name}}
+                    </th>
+                    <th>
+                        {{ headline.Zeitraum }}
+                    </th>
+                    <th>
+                        {{headline.Note}}
+                    </th>
+                    <th>
+                        {{ headline.CP }}
+                    </th>
+                    <th>
+                        {{ headline.Bestanden }}
+                    </th>
+                </tr>
+                <tr v-for="task in tasks" >
+                    <td>
+                        {{ task.Name}}
+                    </td>
+                    <td>
+                        {{ task.Zeitraum}}
+                    </td>
+                    <td>
+                        {{task.Note}}
+                    </td>
+                    <td>
+                        {{ task.CP }}
+                    </td>
+                    <td>
+                        {{task.Bestanden}}
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        {{ summe.Name }}
+                    </td>
+                    <td>
+                        {{ summe.Zeitraum }}
+                    </td>
+                    <td>
+                        {{ summe.Note }}
+                    </td>
+                    <td>
+                        {{ summe.CP }}
+                    </td>
+                    <td>
+                            
+                    </td>
+                </tr>
+            </table>
+        </div>
+
+
+    </div>
+
+    <script>
+        new Vue({
+            el: '#app',
+            data: {
+                tasks: [],
+                headline: {},
+                summe: {},
+            },
+            created(){
+                this.$http.get('/von/me').then(function(response) {
+                    this.tasks = response.body ? response.body : [];
+                    this.headline = response.body[0];
+                    this.headline.CP = "CP"
+                    this.summe = response.body[1]
+                    this.tasks.splice(0, 2)
+            })}})
+    </script>
+</body>
+
+</html>

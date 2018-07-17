@@ -1,0 +1,15 @@
+[Unit]
+Description=Noten Service Server
+
+[Service]
+Type=simple
+ExecStart=/home/zottel/noten/server
+Restart=on-failure
+
+# Run as a custom user
+#User=someone
+#Group=someone
+
+
+[Install]
+WantedBy=multi-user.target
