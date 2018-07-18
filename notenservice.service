@@ -5,7 +5,7 @@ Description=Noten Service Server
 Type=simple
 ExecStart=/var/noten/Notenservice
 Restart=on-failure
-WorkingDirectory=/var/noten/
+WorkingDirectory=/var/noten
 
 # Run as a custom user
 #User=someone
