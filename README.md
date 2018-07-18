@@ -10,14 +10,17 @@ Mitlerweile kann das Programm zwei Sachen:
 - Per Mail über neue Noten informieren 
   - mit Angabe über das Fach und die erreichte Note
   - Aktualisierungsinterval: 1h
-- Übersicht des Notenspiegels als Website per Webserver auf Port 1234
+- Übersicht des Notenspiegels als Website per Webserver auf Port 3412
 
+## Screenshots
+Die Übersicht über die Noten (_Beispieleinträge_) per Browser:
+![vgy.me](https://vgy.me/SViMg1.png)
+
+Die Mailbenachrichtigung:
+![vgy.me](https://vgy.me/MyXXUW.png)
 ## Installation
-##Download 
+### Download 
 ```bash
-wget https://github.com/zottelchin/Notenservice/raw/master/Notenservice.zip
-unzip Notenservice.zip
-rm -r __MACOSX
-cd Notenservice
-chmod +x server
+
+
 ```
