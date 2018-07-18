@@ -1,6 +1,12 @@
 lsf: 
     user: "user"
     password: "test123"
+mail: 
+    sender: "mail@mail.mail"
+    reciver: "noten@mail.mail"
+    password: "geheim"
+    smtpServer: "smtp.mail.server"
+    smtpPort: "587"
 #Setzte diese Variable auf true um einen Notenspiegel zu hosten
 webpage: false
 mailgun:
@@ -9,3 +15,5 @@ mailgun:
     sender-name: "Notenservice"
     reciver: ""
     subject: "Notenupdate!"
+smtpmail-mail: false
+mailgun-mail: true
