@@ -17,7 +17,7 @@ import (
 var saveState []ovgunoten.Klausur
 
 func main() {
-	viper.SetConfigFile("/var/noten/config.yml")
+	viper.SetConfigFile("config.yml")
 	err := viper.ReadInConfig()
 	if err != nil {
 		fmt.Println(err.Error())
