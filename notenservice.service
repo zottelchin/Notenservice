@@ -3,7 +3,7 @@ Description=Noten Service Server
 
 [Service]
 Type=simple
-ExecStart=/home/zottel/noten/server
+ExecStart=/var/noten/Notenservice
 Restart=on-failure
 
 # Run as a custom user

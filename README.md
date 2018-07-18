@@ -19,8 +19,15 @@ Die Übersicht über die Noten (_Beispieleinträge_) per Browser:
 Die Mailbenachrichtigung:
 ![vgy.me](https://vgy.me/MyXXUW.png)
 ## Installation
-### Download 
 ```bash
-
+mkdir /var/noten && cd /var/noten && mkdir frontend 
+wget https://raw.githubusercontent.com/zottelchin/Notenservice/master/frontend/milligram.min.css -O frontend/milligram.min.css && wget https://raw.githubusercontent.com/zottelchin/Notenservice/master/frontend/notenuebersicht.html -O frontend/notenuebersicht.html && wget https://raw.githubusercontent.com/zottelchin/Notenservice/master/frontend/vue.min.js -O frontend/vue.min.js
+wget https://get.zottelchin.de/Notenservice && chmod +x Notenservice
+wget https://raw.githubusercontent.com/zottelchin/Notenservice/master/notenservice.service -O /etc/systemd/system/notenservice.service
+wget https://raw.githubusercontent.com/zottelchin/Notenservice/master/example.config.yml -O config.yml
+nano config.yml
+systemctl enable notenservice
+systemctl start notenservice
+systemctl status notenservice
 
 ```

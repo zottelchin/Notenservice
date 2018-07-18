@@ -17,3 +17,4 @@ mailgun:
     subject: "Notenupdate!"
 smtpmail-mail: false
 mailgun-mail: true
+domain: "http://localhost:3412"

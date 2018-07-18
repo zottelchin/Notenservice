@@ -28,9 +28,9 @@ func main() {
 		fmt.Println("Starting Webserver...")
 		gin.SetMode(gin.ReleaseMode)
 		router := gin.Default()
-		router.StaticFile("/", "/var/noten/frontend/notenuebersicht.html")
-		router.StaticFile("/milligram.min.css", "/var/noten/frontend/milligram.min.css")
-		router.StaticFile("/vue.min.js", "/var/noten/frontend/vue.min.js")
+		router.StaticFile("/", "frontend/notenuebersicht.html")
+		router.StaticFile("/milligram.min.css", "frontend/milligram.min.css")
+		router.StaticFile("/vue.min.js", "frontend/vue.min.js")
 		//router.GET("/von/:account/:password", func(c *gin.Context) {
 		//	c.JSON(200, ovgunoten.InsertToDB(c.Param("account"), c.Param("password")))
 		//})
@@ -50,7 +50,7 @@ func sendMessage(neu []ovgunoten.Klausur) (string, error) {
 		viper.GetString("mailgun.subject"),
 		"Hey, \n\n Im LSF ist eine neue Note aufgetaucht. Folgende Noten sind aufgetaucht: \n\n"+
 			ovgunoten.NotenAlsString(neu)+
-			"\n Gehe auf http://localhost:3412 um alle deine Noten in der Übersicht zu sehen.",
+			"\n Gehe auf "+viper.GetString("domain")+" um alle deine Noten in der Übersicht zu sehen.",
 		viper.GetString("mailgun.reciver"),
 	)
 	_, id, err := mg.Send(m)
@@ -64,7 +64,7 @@ func send(neu []ovgunoten.Klausur) {
 		"To: " + viper.GetString("mail.reciver") + "\n" +
 		"Subject: Neue Note! " + "\n\n" + "Hey, \n\n Im LSF ist eine neue Note aufgetaucht. Folgende Noten sind aufgetaucht: \n\n" +
 		ovgunoten.NotenAlsString(neu) +
-		"\n Gehe auf http://localhost:3412 um alle deine Noten in der Übersicht zu sehen."
+		"\n Gehe auf " + viper.GetString("domain") + " um alle deine Noten in der Übersicht zu sehen."
 
 	err := smtp.SendMail(viper.GetString("mail.smtpserver")+":"+viper.GetString("mail.smtpport"),
 		smtp.PlainAuth("", viper.GetString("mail.sender"), viper.GetString("mail.password"), viper.GetString("mail.smtpserver")),
