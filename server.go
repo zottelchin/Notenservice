@@ -3,10 +3,10 @@ package main
 import (
 	"fmt"
 	"log"
-	"net/smtp"
 	"time"
 
 	"github.com/spf13/viper"
+	mailgun "gopkg.in/mailgun/mailgun-go.v1"
 
 	"github.com/gin-gonic/gin"
 
@@ -21,9 +21,9 @@ func main() {
 	if err != nil {
 		fmt.Println(err.Error())
 	}
-	go routine()
 
 	if viper.GetBool("webpage") {
+		go routine()
 		fmt.Println("Starting Webserver...")
 		gin.SetMode(gin.ReleaseMode)
 		router := gin.Default()
@@ -37,38 +37,37 @@ func main() {
 			c.JSON(200, saveState)
 		})
 		router.Run(":3412")
+	} else {
+		routine()
 	}
 }
 
-func send(neu []ovgunoten.Klausur) {
-
-	msg := "From: " + viper.GetString("mail.sender") + "\n" +
-		"To: " + viper.GetString("mail.reciver") + "\n" +
-		"Subject: Neue Note! " + "\n\n" + "Hey, \n\n Im LSF ist eine neue Note aufgetaucht. Folgende Noten sind aufgetaucht: \n\n" +
-		ovgunoten.NotenAlsString(neu) +
-		"\n Gehe auf noten.zottelchin.de um alle deine Noten in der Übersicht zu sehen."
-
-	err := smtp.SendMail(viper.GetString("mail.smtpserver")+":"+viper.GetString("mail.smtpport"),
-		smtp.PlainAuth("", viper.GetString("mail.sender"), viper.GetString("mail.password"), viper.GetString("mail.smtpserver")),
-		viper.GetString("mail.sender"), viper.GetStringSlice("mail.reciver"), []byte(msg))
-
-	if err != nil {
-		log.Printf("smtp error: %s", err)
-		return
-	}
-
-	log.Println("Mailnotification sent to " + viper.GetString("mail.reciver"))
+func sendMessage(neu []ovgunoten.Klausur) (string, error) {
+	mg := mailgun.NewMailgun(viper.GetString("mailgun.domain"), viper.GetString("mailgun.api-key"), "")
+	m := mg.NewMessage(
+		viper.GetString("mailgun.sender-name")+" <no-reply@"+viper.GetString("mailgun.domain")+">",
+		viper.GetString("mailgun.subject"),
+		"Hey, \n\n Im LSF ist eine neue Note aufgetaucht. Folgende Noten sind aufgetaucht: \n\n"+
+			ovgunoten.NotenAlsString(neu)+
+			"\n Gehe auf https://localhost:3412 um alle deine Noten in der Übersicht zu sehen.",
+		viper.GetString("mailgun.reciver"),
+	)
+	_, id, err := mg.Send(m)
+	log.Println("Mailnotification sent to " + viper.GetString("mailgun.reciver"))
+	return id, err
 }
 
 func routine() {
+	fmt.Println("Starting Routine...")
 	tmp := ovgunoten.InsertToDB(viper.GetString("lsf.user"), viper.GetString("lsf.password"))
+	fmt.Println("Got Grades")
 	diff := difference(saveState, tmp)
 	if len(diff) > 0 {
-		send(diff)
+		sendMessage(diff)
 		saveState = tmp
 	}
 	time.Sleep(time.Hour)
-	go routine()
+	routine()
 }
 
 func difference(alt []ovgunoten.Klausur, neu []ovgunoten.Klausur) []ovgunoten.Klausur {
