@@ -15,7 +15,7 @@
         
 
         <div id="app">
-            <h2>Noten&uuml;bersicht</h2>
+            <h2>Noten&uuml;bersicht</h2><small>{{ stand }} / {{ akt }} </small></br>
             <table>
                 <tr>
                     <th>
@@ -81,14 +81,20 @@
                 tasks: [],
                 headline: {},
                 summe: {},
+                stand: "",
+                akt: "",
             },
             created(){
                 this.$http.get('/von/me').then(function(response) {
-                    this.tasks = response.body ? response.body : [];
-                    this.headline = response.body[0];
-                    this.headline.CP = "CP"
-                    this.summe = response.body[1]
-                    this.tasks.splice(0, 2)
+                    if (response.body.noten){
+                        this.tasks = response.body.noten;
+                        this.headline = response.body[0];
+                        this.headline.CP = "CP";
+                        this.summe = response.body[1];
+                        this.tasks.splice(0, 2);
+                    }
+                    this.stand = response.body.stand;
+                    this.akt = response.body.akutualisiert_um;
             })}})
     </script>
 </body>

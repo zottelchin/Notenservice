@@ -15,6 +15,8 @@ import (
 )
 
 var saveState []ovgunoten.Klausur
+var stand string
+var aktuallisiert string
 
 func main() {
 	viper.SetConfigFile("config.yml")
@@ -35,7 +37,11 @@ func main() {
 		//	c.JSON(200, ovgunoten.InsertToDB(c.Param("account"), c.Param("password")))
 		//})
 		router.GET("/von/me", func(c *gin.Context) {
-			c.JSON(200, saveState)
+			c.JSON(200, gin.H{
+				"noten":            saveState,
+				"akutualisiert_um": aktuallisiert,
+				"stand":            stand,
+			})
 		})
 		router.Run(":3412")
 	} else {
@@ -82,6 +88,10 @@ func routine() {
 	fmt.Println("Starting Routine...")
 	tmp := ovgunoten.InsertToDB(viper.GetString("lsf.user"), viper.GetString("lsf.password"))
 	fmt.Println("Got Grades")
+	aktuallisiert = zeitspeicher("Aktualisiert:")
+	if stand == "" {
+		stand = zeitspeicher("Stand vom")
+	}
 	diff := difference(saveState, tmp)
 	if len(diff) > 0 {
 		if viper.GetBool("smtpmail-mail") {
@@ -91,6 +101,7 @@ func routine() {
 			sendMessage(diff)
 		}
 		saveState = tmp
+		stand = zeitspeicher("Stand:")
 	}
 	time.Sleep(time.Hour)
 	routine()
@@ -110,4 +121,10 @@ func difference(alt []ovgunoten.Klausur, neu []ovgunoten.Klausur) []ovgunoten.Kl
 		}
 	}
 	return result
+}
+
+func zeitspeicher(name string) string {
+	h, m, _ := time.Now().Clock()
+	_, mo, d := time.Now().Date()
+	return fmt.Sprintf("%s %d. %s - %d:%d Uhr", name, d, mo.String(), h, m)
 }

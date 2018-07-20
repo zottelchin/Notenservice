@@ -570,7 +570,9 @@ h1 {
 
 h2 {
     font-size: 3.6rem;
-    line-height: 1.25
+    line-height: 1.25;
+    display: inline;
+    margin-right: 40rem;
 }
 
 h3 {
