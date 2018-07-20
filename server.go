@@ -87,10 +87,14 @@ func send(neu []ovgunoten.Klausur) {
 func routine() {
 	fmt.Println("Starting Routine...")
 	tmp := ovgunoten.InsertToDB(viper.GetString("lsf.user"), viper.GetString("lsf.password"))
-	fmt.Println("Got Grades")
 	aktuallisiert = zeitspeicher("Aktualisiert:")
 	if stand == "" {
 		stand = zeitspeicher("Stand vom")
+	}
+	if len(tmp) == 0 {
+		senderr("Leeres Array aus package ovgunoten.")
+	} else {
+		log.Println("Got Grades")
 	}
 	diff := difference(saveState, tmp)
 	if len(diff) > 0 {
@@ -127,4 +131,43 @@ func zeitspeicher(name string) string {
 	h, m, _ := time.Now().Clock()
 	_, mo, d := time.Now().Date()
 	return fmt.Sprintf("%s %d. %s - %d:%d Uhr", name, d, mo.String(), h, m)
+}
+
+func senderr(err string) {
+	log.Printf("Achtung: %s", err)
+	if viper.GetBool("smtpmail-mail") {
+		msg := "From: " + viper.GetString("mail.sender") + "\n" +
+			"To: " + viper.GetString("mail.reciver") + "\n" +
+			"Subject: Fehlermeldung Notenservice " + "\n\n" + "Hey, \n\n Im Notenservice ist ein Fehler aufgetreten: \n\n" +
+			err +
+			"\n\n Gehe auf " + viper.GetString("domain") + " um alle deine Noten in der Übersicht zu sehen."
+
+		err := smtp.SendMail(viper.GetString("mail.smtpserver")+":"+viper.GetString("mail.smtpport"),
+			smtp.PlainAuth("", viper.GetString("mail.sender"), viper.GetString("mail.password"), viper.GetString("mail.smtpserver")),
+			viper.GetString("mail.sender"), viper.GetStringSlice("mail.reciver"), []byte(msg))
+
+		if err != nil {
+			log.Printf("smtp error: %s", err)
+			return
+		}
+
+		log.Println("Errormail sent to " + viper.GetString("mail.reciver"))
+	}
+	if viper.GetBool("mailgun-mail") {
+		mg := mailgun.NewMailgun(viper.GetString("mailgun.domain"), viper.GetString("mailgun.api-key"), "")
+		m := mg.NewMessage(
+			viper.GetString("mailgun.sender-name")+" <no-reply@"+viper.GetString("mailgun.domain")+">",
+			viper.GetString("mailgun.subject"),
+			"Hey, \n\n Im Notenservie ist ein Fehler aufgetreten: \n\n"+
+				err+
+				"\n\n Gehe auf "+viper.GetString("domain")+" um alle deine Noten in der Übersicht zu sehen.",
+			viper.GetString("mailgun.reciver"),
+		)
+		_, _, err := mg.Send(m)
+		if err != nil {
+			log.Printf("mailgun error: %s", err)
+			return
+		}
+		log.Println("Errormail sent to " + viper.GetString("mailgun.reciver"))
+	}
 }
