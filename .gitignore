@@ -15,3 +15,7 @@
 
 #my config
 config.yml
+
+/vendor/
+/Notenservice
+/glide.lock
