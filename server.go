@@ -11,7 +11,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"./ovgunoten"
+	"github.com/zottelchin/Notenservice/ovgunoten"
 )
 
 var saveState []ovgunoten.Klausur
@@ -72,8 +72,9 @@ func send(neu []ovgunoten.Klausur) {
 		ovgunoten.NotenAlsString(neu) +
 		"\n Gehe auf " + viper.GetString("domain") + " um alle deine Noten in der Übersicht zu sehen."
 
+    viper.SetDefault("mail.username", viper.GetString("mail.sender"))
 	err := smtp.SendMail(viper.GetString("mail.smtpserver")+":"+viper.GetString("mail.smtpport"),
-		smtp.PlainAuth("", viper.GetString("mail.sender"), viper.GetString("mail.password"), viper.GetString("mail.smtpserver")),
+		smtp.PlainAuth("", viper.GetString("mail.username"), viper.GetString("mail.password"), viper.GetString("mail.smtpserver")),
 		viper.GetString("mail.sender"), viper.GetStringSlice("mail.reciver"), []byte(msg))
 
 	if err != nil {
