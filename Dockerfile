@@ -14,6 +14,7 @@ FROM scratch
 COPY frontend /var/noten/frontend
 COPY example.config.yml /var/noten/config.yml
 COPY --from=build /go/src/github.com/zottelchin/Notenservice/Notenservice /var/noten/
+COPY --from=build /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 
 WORKDIR /var/noten
 ENV GIN_MODE=release
