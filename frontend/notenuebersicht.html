@@ -34,7 +34,7 @@
                         {{ headline.Bestanden }}
                     </th>
                 </tr>
-                <tr v-for="task in tasks" >
+                <tr v-for="task in sortedArray" >
                     <td>
                         {{ task.Name}}
                     </td>
@@ -78,7 +78,7 @@
         new Vue({
             el: '#app',
             data: {
-                tasks: [],
+                noten: [],
                 headline: {},
                 summe: {},
                 stand: "",
@@ -87,15 +87,32 @@
             created(){
                 this.$http.get('/von/me').then(function(response) {
                     if (response.body.noten){
-                        this.tasks = response.body.noten;
-                        this.headline = response.body[0];
+                        this.noten = response.body.noten;
+                        this.headline = response.body.noten[0];
                         this.headline.CP = "CP";
-                        this.summe = response.body[1];
-                        this.tasks.splice(0, 2);
+                        this.summe = response.body.noten[1];
+                        this.noten.splice(0, 2);
                     }
                     this.stand = response.body.stand;
                     this.akt = response.body.akutualisiert_um;
-            })}})
+            })},
+  computed: {
+    sortedArray: function() {
+      function compare(a, b) {
+        if (a.Zeitraum.slice(-2) < b.Zeitraum.slice(-2))
+          return -1;
+        if (a.Zeitraum.slice(-2) > b.Zeitraum.slice(-2))
+          return 1;
+        if (a.Zeitraum > b.Zeitraum)
+            return -1;
+        if (a.Zeitraum < b.Zeitraum)
+            return 1;
+        return 0;
+      }
+
+      return this.noten.sort(compare);
+    }
+  }})
     </script>
 </body>
 
