@@ -68,11 +68,12 @@ func send(neu []ovgunoten.Klausur) {
 
 	msg := "From: " + viper.GetString("mail.sender") + "\n" +
 		"To: " + viper.GetString("mail.reciver") + "\n" +
+		"Content-Type: text/plain; charset=\"utf-8\"\n" +
 		"Subject: Neue Note! " + "\n\n" + "Hey, \n\n Im LSF ist eine neue Note aufgetaucht. Folgende Noten sind aufgetaucht: \n\n" +
 		ovgunoten.NotenAlsString(neu) +
 		"\n Gehe auf " + viper.GetString("domain") + " um alle deine Noten in der Übersicht zu sehen."
 
-    viper.SetDefault("mail.username", viper.GetString("mail.sender"))
+	viper.SetDefault("mail.username", viper.GetString("mail.sender"))
 	err := smtp.SendMail(viper.GetString("mail.smtpserver")+":"+viper.GetString("mail.smtpport"),
 		smtp.PlainAuth("", viper.GetString("mail.username"), viper.GetString("mail.password"), viper.GetString("mail.smtpserver")),
 		viper.GetString("mail.sender"), viper.GetStringSlice("mail.reciver"), []byte(msg))
