@@ -15,7 +15,7 @@
         
 
         <div id="app">
-            <h2>Noten&uuml;bersicht</h2><small>{{ stand }} / {{ akt }} </small></br>
+            <h2>Noten&uuml;bersicht</h2><small class="float-right">{{ stand }} / {{ akt }} </small></br>
             <table>
                 <tr>
                     <th>
@@ -62,7 +62,7 @@
                         {{ summe.Note }}
                     </td>
                     <td>
-                        {{ summe.CP }}
+                        {{ summeCP }}
                     </td>
                     <td>
                             
@@ -111,6 +111,15 @@
       }
 
       return this.noten.sort(compare);
+    },
+    summeCP: function() {
+        let total = [];
+
+        Object.entries(this.noten).forEach(([key, val]) => {
+      total.push(parseInt(val.CP)) // the value of the current key.
+        });
+
+  return total.reduce(function(total, num){ return total + num }, 0);
     }
   }})
     </script>

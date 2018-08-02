@@ -15,6 +15,7 @@ import (
 )
 
 var saveState []ovgunoten.Klausur
+var aktuell []ovgunoten.Klausur
 var stand string
 var aktuallisiert string
 
@@ -41,6 +42,7 @@ func main() {
 				"noten":            saveState,
 				"akutualisiert_um": aktuallisiert,
 				"stand":            stand,
+				"aktuell":          aktuell,
 			})
 		})
 		router.Run(":3412")
@@ -99,6 +101,7 @@ func routine() {
 		log.Println("Got Grades")
 	}
 	diff := difference(saveState, tmp)
+	log.Println(diff)
 	if len(diff) > 0 {
 		if viper.GetBool("smtpmail-mail") {
 			send(diff)
@@ -109,6 +112,7 @@ func routine() {
 		saveState = tmp
 		stand = zeitspeicher("Stand:")
 	}
+	aktuell = tmp
 	time.Sleep(time.Hour)
 	routine()
 }
@@ -118,7 +122,7 @@ func difference(alt []ovgunoten.Klausur, neu []ovgunoten.Klausur) []ovgunoten.Kl
 	for i := 0; i < len(neu); i++ {
 		found := false
 		for j := 0; j < len(alt); j++ {
-			if alt[j].Name == neu[i].Name {
+			if alt[j].Name == neu[i].Name && alt[j].CP == neu[i].CP && alt[j].Note == neu[i].Note && alt[j].Prüfungszeitraum == neu[i].Prüfungszeitraum {
 				found = true
 			}
 		}
