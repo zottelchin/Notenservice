@@ -25,7 +25,7 @@ mkdir /var/noten && cd /var/noten && mkdir frontend
 wget https://raw.githubusercontent.com/zottelchin/Notenservice/master/frontend/milligram.min.css -O frontend/milligram.min.css  
 wget https://raw.githubusercontent.com/zottelchin/Notenservice/master/frontend/notenuebersicht.html -O frontend/notenuebersicht.html  
 wget https://raw.githubusercontent.com/zottelchin/Notenservice/master/frontend/vue.min.js -O frontend/vue.min.js
-wget https://github.com/zottelchin/Notenservice/releases/download/v1.1/Notenservice  
+wget https://github.com/zottelchin/Notenservice/releases/download/v1.2/Notenservice  
 chmod +x Notenservice
 
 wget https://raw.githubusercontent.com/zottelchin/Notenservice/master/notenservice.service -O /etc/systemd/system/notenservice.service
