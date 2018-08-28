@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"fmt"
 	"log"
 	"net/smtp"
@@ -11,44 +12,33 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	_ "github.com/mattn/go-sqlite3"
 	"github.com/zottelchin/Notenservice/ovgunoten"
 )
 
-var saveState []ovgunoten.Klausur
-var aktuell []ovgunoten.Klausur
 var stand string
 var aktuallisiert string
+var db *sql.DB
 
 func main() {
+	var err error
+	db, err = sql.Open("sqlite3", "storage.db")
+	if err != nil {
+		panic(err)
+	}
 	viper.SetConfigFile("config.yml")
-	err := viper.ReadInConfig()
+	err = viper.ReadInConfig()
 	if err != nil {
 		fmt.Println(err.Error())
 	}
 
+	initDB(db)
+
 	if viper.GetBool("webpage") {
-		go routine()
-		fmt.Println("Starting Webserver...")
-		gin.SetMode(gin.ReleaseMode)
-		router := gin.Default()
-		router.StaticFile("/", "frontend/notenuebersicht.html")
-		router.StaticFile("/milligram.min.css", "frontend/milligram.min.css")
-		router.StaticFile("/vue.min.js", "frontend/vue.min.js")
-		//router.GET("/von/:account/:password", func(c *gin.Context) {
-		//	c.JSON(200, ovgunoten.InsertToDB(c.Param("account"), c.Param("password")))
-		//})
-		router.GET("/von/me", func(c *gin.Context) {
-			c.JSON(200, gin.H{
-				"noten":            saveState,
-				"akutualisiert_um": aktuallisiert,
-				"stand":            stand,
-				"aktuell":          aktuell,
-			})
-		})
-		router.Run(":3412")
-	} else {
-		routine()
+		go web()
 	}
+
+	routine()
 }
 
 func sendMessage(neu []ovgunoten.Klausur) (string, error) {
@@ -89,32 +79,35 @@ func send(neu []ovgunoten.Klausur) {
 }
 
 func routine() {
-	fmt.Println("Starting Routine...")
-	tmp := ovgunoten.InsertToDB(viper.GetString("lsf.user"), viper.GetString("lsf.password"))
-	aktuallisiert = zeitspeicher("Aktualisiert:")
-	if stand == "" {
-		stand = zeitspeicher("Stand vom")
-	}
-	if len(tmp) == 0 {
-		senderr("Leeres Array aus package ovgunoten.")
-	} else {
-		log.Println("Got Grades")
-	}
-	diff := difference(saveState, tmp)
-	log.Println(diff)
-	if len(diff) > 0 {
-		if viper.GetBool("smtpmail-mail") {
-			send(diff)
+	for {
+		fmt.Println("Starting Routine...")
+		tmp := ovgunoten.InsertToDB(viper.GetString("lsf.user"), viper.GetString("lsf.password"))
+		aktuallisiert = zeitspeicher("Aktualisiert:")
+		if stand == "" {
+			stand = zeitspeicher("Stand vom")
 		}
-		if viper.GetBool("mailgun-mail") {
-			sendMessage(diff)
+		if len(tmp) == 0 {
+			senderr("Leeres Array aus package ovgunoten.")
+		} else {
+			log.Println("Got Grades")
+			log.Printf("Antwort: %s\n", tmp)
 		}
-		saveState = tmp
-		stand = zeitspeicher("Stand:")
+
+		diff := difference(get(), tmp)
+		log.Printf("Differenz: %s\n", diff)
+
+		if len(diff) > 0 {
+			if viper.GetBool("smtpmail-mail") {
+				send(diff)
+			}
+			if viper.GetBool("mailgun-mail") {
+				sendMessage(diff)
+			}
+			save(diff)
+			stand = zeitspeicher("Stand:")
+		}
+		time.Sleep(time.Minute)
 	}
-	aktuell = tmp
-	time.Sleep(time.Hour)
-	routine()
 }
 
 func difference(alt []ovgunoten.Klausur, neu []ovgunoten.Klausur) []ovgunoten.Klausur {
@@ -153,11 +146,11 @@ func senderr(err string) {
 			viper.GetString("mail.sender"), viper.GetStringSlice("mail.reciver"), []byte(msg))
 
 		if err != nil {
-			log.Printf("smtp error: %s", err)
+			log.Printf("smtp error: %s\n", err)
 			return
 		}
 
-		log.Println("Errormail sent to " + viper.GetString("mail.reciver"))
+		log.Printf("Errormail sent to %s\n", viper.GetString("mail.reciver"))
 	}
 	if viper.GetBool("mailgun-mail") {
 		mg := mailgun.NewMailgun(viper.GetString("mailgun.domain"), viper.GetString("mailgun.api-key"), "")
@@ -171,9 +164,83 @@ func senderr(err string) {
 		)
 		_, _, err := mg.Send(m)
 		if err != nil {
-			log.Printf("mailgun error: %s", err)
+			log.Printf("mailgun error: %s\n", err)
 			return
 		}
-		log.Println("Errormail sent to " + viper.GetString("mailgun.reciver"))
+		log.Printf("Errormail sent to %s\n", viper.GetString("mailgun.reciver"))
 	}
+}
+
+func initDB(db *sql.DB) {
+	_, err := db.Exec("DROP TABLE noten")
+	if err != nil {
+		println(err)
+	}
+	sql := `
+    CREATE TABLE IF NOT EXISTS noten(
+		id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+		kurs VARCHAR NOT NULL,
+		semester VARCHAR NOT NULL,
+		note VARCHAR,
+		status VARCHAR NOT NULL,
+		bonus VARCHAR NOT NULL
+    );`
+
+	_, err = db.Exec(sql)
+	// Exit if something goes wrong with our SQL statement above
+	if err != nil {
+		panic(err)
+	}
+	log.Printf("Tabelle erstellt\n")
+}
+
+func save(s []ovgunoten.Klausur) {
+	statement, err := db.Prepare("INSERT INTO noten (kurs, semester, note, status, bonus) VALUES (?, ?, ?, ?, ?)")
+	if err != nil {
+		println(err)
+	}
+	for _, x := range s {
+		statement.Exec(x.Name, x.Prüfungszeitraum, x.Note, x.Bestanden, x.CP)
+	}
+	log.Printf("In der Datenbank gespeichert: %s\n", s)
+}
+
+func get() []ovgunoten.Klausur {
+	rows, err := db.Query("SELECT kurs, semester, note, status, bonus FROM noten")
+	if err != nil {
+		println(err)
+	}
+
+	res := []ovgunoten.Klausur{}
+	for rows.Next() {
+		line := ovgunoten.Klausur{}
+		err = rows.Scan(&line.Name, &line.Prüfungszeitraum, &line.Note, &line.Bestanden, &line.CP)
+		if err != nil {
+			println(err)
+		}
+		res = append(res, line)
+	}
+
+	log.Printf("Aus der Datenbank: %s\n", res)
+	return res
+}
+
+func web() {
+	fmt.Println("Starting Webserver...")
+	gin.SetMode(gin.ReleaseMode)
+	router := gin.Default()
+	router.StaticFile("/", "frontend/notenuebersicht.html")
+	router.StaticFile("/milligram.min.css", "frontend/milligram.min.css")
+	router.StaticFile("/vue.min.js", "frontend/vue.min.js")
+	//router.GET("/von/:account/:password", func(c *gin.Context) {
+	//	c.JSON(200, ovgunoten.InsertToDB(c.Param("account"), c.Param("password")))
+	//})
+	router.GET("/von/me", func(c *gin.Context) {
+		c.JSON(200, gin.H{
+			"noten":            get(),
+			"akutualisiert_um": aktuallisiert,
+			"stand":            stand,
+		})
+	})
+	router.Run(":3412")
 }

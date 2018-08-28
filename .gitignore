@@ -19,3 +19,5 @@ config.yml
 /vendor/
 /Notenservice
 /glide.lock
+
+*.db
