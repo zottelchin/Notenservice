@@ -83,7 +83,7 @@ func send(neu []ovgunoten.Klausur) {
 func routine() {
 	for {
 		fmt.Println("Starting Routine...")
-		tmp := ovgunoten.InsertToDB(viper.GetString("lsf.user"), viper.GetString("lsf.password"))
+		tmp := ovgunoten.NotenAbrufen(viper.GetString("lsf.user"), viper.GetString("lsf.password"))
 		aktuallisiert = zeitspeicher("Aktualisiert:")
 		if stand == "" {
 			stand = zeitspeicher("Stand vom")
@@ -92,11 +92,11 @@ func routine() {
 			senderr("Leeres Array aus package ovgunoten.")
 		} else {
 			log.Println("Got Grades")
-			log.Printf("Antwort: %s\n", tmp)
+			log.Printf("Antwort: %s\n", ovgunoten.NotenAlsString(tmp))
 		}
 
 		diff := difference(get(), tmp)
-		log.Printf("Differenz: %s\n", diff)
+		log.Printf("Differenz: %s\n", ovgunoten.NotenAlsString(diff))
 
 		if len(diff) > 0 {
 			if viper.GetBool("smtpmail-mail") {
@@ -206,7 +206,7 @@ func save(s []ovgunoten.Klausur) {
 	for _, x := range s {
 		statement.Exec(x.Name, x.Prüfungszeitraum, x.Note, x.Bestanden, x.CP)
 	}
-	log.Printf("In der Datenbank gespeichert: %s\n", s)
+	log.Printf("In der Datenbank gespeichert: %s\n", ovgunoten.NotenAlsString(s))
 }
 
 func get() []ovgunoten.Klausur {
@@ -225,7 +225,7 @@ func get() []ovgunoten.Klausur {
 		res = append(res, line)
 	}
 
-	log.Printf("Aus der Datenbank: %s\n", res)
+	log.Printf("Aus der Datenbank: %s\n", ovgunoten.NotenAlsString(res))
 	return res
 }
 
