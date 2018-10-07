@@ -18,3 +18,4 @@ mailgun:
 smtpmail-mail: false
 mailgun-mail: true
 domain: "http://localhost:3412"
+#updateIntervall: 60

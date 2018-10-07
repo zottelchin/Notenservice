@@ -32,6 +32,8 @@ func main() {
 		fmt.Println(err.Error())
 	}
 
+	viper.SetDefault("updateInterval", 60)
+
 	initDB(db)
 
 	if viper.GetBool("webpage") {
@@ -106,7 +108,9 @@ func routine() {
 			save(diff)
 			stand = zeitspeicher("Stand:")
 		}
-		time.Sleep(time.Minute)
+
+		log.Printf("Ich schlafe jetzt für: %d Minuten", viper.GetDuration("updateInterval"))
+		time.Sleep(viper.GetDuration("updateInterval") * time.Minute)
 	}
 }
 
