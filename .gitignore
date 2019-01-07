@@ -21,3 +21,5 @@ config.yml
 /glide.lock
 
 *.db
+
+store\.noten

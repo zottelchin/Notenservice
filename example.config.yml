@@ -19,3 +19,4 @@ smtpmail-mail: false
 mailgun-mail: true
 domain: "http://localhost:3412"
 #updateIntervall: 60
+storage: "/var/noten/store.noten"

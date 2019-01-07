@@ -1,21 +1,27 @@
-<html lang="en">
+‚<html lang="en">
 
 <head>
-        <title>Noten&uuml;bersicht</title>
-        <link rel="stylesheet" href="milligram.min.css">
-        <link rel="stylesheet" target="blank" href="https://fonts.googleapis.com/css?family=Roboto:300,300italic,700,700italic">
-        <link rel="stylesheet" href="//cdn.rawgit.com/necolas/normalize.css/master/normalize.css">
-        <script src="vue.min.js"></script>
-        <script src="https://cdn.jsdelivr.net/npm/vue-resource@1.5.0"></script>
-        <meta charset="utf-8" />
+    <title>Noten&uuml;bersicht</title>
+    <link rel="stylesheet" href="milligram.min.css">
+    <link rel="stylesheet" target="blank" href="https://fonts.googleapis.com/css?family=Roboto:300,300italic,700,700italic">
+    <link rel="stylesheet" href="//cdn.rawgit.com/necolas/normalize.css/master/normalize.css">
+    <script src="vue.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue-resource@1.5.0"></script>
+    <meta charset="utf-8" />
+    <link rel="shortcut icon" href="/favicon.ico">
+    <link rel="icon" type="image/png" href="/favicon.png" sizes="32x32">
+    <link rel="icon" type="image/png" href="/favicon.png" sizes="96x96">
+    <link rel="apple-touch-icon" sizes="180x180" href="/favicon.png">
+    <meta name="msapplication-TileColor" content="#ffffff">
+    <meta name="msapplication-TileImage" content="/favicon.png">
 </head>
 
 <body>
     <div class="container">
-        
+
 
         <div id="app">
-            <h2>Noten&uuml;bersicht</h2><small class="float-right">{{ stand }} / {{ akt }} </small></br>
+            <h2>Noten&uuml;bersicht</h2></br>
             <table>
                 <tr>
                     <th>
@@ -34,7 +40,7 @@
                         {{ headline.Bestanden }}
                     </th>
                 </tr>
-                <tr v-for="task in sortedArray" >
+                <tr v-for="task in sortedArray">
                     <td>
                         {{ task.Name}}
                     </td>
@@ -65,7 +71,7 @@
                         {{ summeCP }}
                     </td>
                     <td>
-                            
+
                     </td>
                 </tr>
             </table>
@@ -81,47 +87,45 @@
                 noten: [],
                 headline: {},
                 summe: {},
-                stand: "",
-                akt: "",
             },
-            created(){
-                this.$http.get('/von/me').then(function(response) {
-                    if (response.body.noten){
+            created() {
+                this.$http.get('/von/me').then(function (response) {
+                    if (response.body.noten) {
                         this.noten = response.body.noten;
                         this.headline = response.body.noten[0];
                         this.headline.CP = "CP";
                         this.summe = response.body.noten[1];
                         this.noten.splice(0, 2);
                     }
-                    this.stand = response.body.stand;
-                    this.akt = response.body.akutualisiert_um;
-            })},
-  computed: {
-    sortedArray: function() {
-      function compare(a, b) {
-        if (a.Zeitraum.slice(-2) < b.Zeitraum.slice(-2))
-          return -1;
-        if (a.Zeitraum.slice(-2) > b.Zeitraum.slice(-2))
-          return 1;
-        if (a.Zeitraum > b.Zeitraum)
-            return -1;
-        if (a.Zeitraum < b.Zeitraum)
-            return 1;
-        return 0;
-      }
+                })
+            },
+            computed: {
+                sortedArray: function () {
+                    function compare(a, b) {
+                        if (a.Zeitraum.slice(-2) < b.Zeitraum.slice(-2))
+                            return -1;
+                        if (a.Zeitraum.slice(-2) > b.Zeitraum.slice(-2))
+                            return 1;
+                        if (a.Zeitraum > b.Zeitraum)
+                            return -1;
+                        if (a.Zeitraum < b.Zeitraum)
+                            return 1;
+                        return 0;
+                    }
 
-      return this.noten.sort(compare);
-    },
-    summeCP: function() {
-        let total = [];
+                    return this.noten.sort(compare);
+                },
+                summeCP: function () {
+                    let total = [];
 
-        Object.entries(this.noten).forEach(([key, val]) => {
-      total.push(parseInt(val.CP)) // the value of the current key.
-        });
+                    Object.entries(this.noten).forEach(([key, val]) => {
+                        total.push(parseInt(val.CP)) // the value of the current key.
+                    });
 
-  return total.reduce(function(total, num){ return total + num }, 0);
-    }
-  }})
+                    return total.reduce(function (total, num) { return total + num }, 0);
+                }
+            }
+        })
     </script>
 </body>
 

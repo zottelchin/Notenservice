@@ -1,6 +1,9 @@
 package ovgunoten
 
 import (
+	"bytes"
+	"crypto/tls"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -46,6 +49,7 @@ func NotenAbrufen(us string, pw string) []Klausur {
 		}
 	}()
 
+	log.Println("Starte")
 	//Create Client
 	httpClient, CookieJar := clientErstellen(us)
 
@@ -53,12 +57,16 @@ func NotenAbrufen(us string, pw string) []Klausur {
 	DERCookie, err := login(us, pw, httpClient, CookieJar)
 	if err != nil {
 		log.Println("Ein Problem beim Login")
+	} else {
+		log.Println("Login war erfolgreich")
 	}
 
 	asi, err := asiGetter(DERCookie, httpClient)
 	if err != nil {
 		log.Printf("There was an Error getting the ASI key for %s \nThe error was: %s \n", us, err)
 	}
+
+	log.Println("HIER")
 
 	NotenParsen(DERCookie, asi, httpClient)
 
@@ -78,104 +86,54 @@ func clientErstellen(us string) (httpClient *http.Client, CookieJar *cookiejar.J
 		Timeout: 5 * time.Second,
 		CheckRedirect: func(req *http.Request, via []*http.Request) error {
 			return http.ErrUseLastResponse
+		},
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 		}}
+	log.Println("Client erstellt")
+
 	return
 }
 
 func login(us string, pw string, client *http.Client, CookieJar *cookiejar.Jar) (*http.Cookie, error) {
-	LSFRedirURL := "https://lsf.ovgu.de/Shibboleth.sso/Login?target=/qislsf/rds?state=user&type=1"
-	LoginURL := "https://idp-serv.uni-magdeburg.de/idp/Authn/UserPassword?j_password=" + pw + "&j_username=" + us
-	GetFinalCookieURL := "https://lsf.ovgu.de/Shibboleth.sso/SAML2/POST"
-	SSOFirstCookieUrl := "https://idp-serv.uni-magdeburg.de:443/idp/Authn/UserPassword"
-	SSOSecondCookieURL := "https://idp-serv.uni-magdeburg.de:443/idp/profile/SAML2/Redirect/SSO"
+	CoockieURL := "https://lsf.ovgu.de/qislsf"
+	loginURL := "https://lsf.ovgu.de/qislsf/rds?state=user&type=1&category=auth.login&startpage=portal.vm"
 
 	//get first Cookie
-	nextURL := LSFRedirURL
-	for i := 0; i < 10; i++ {
-		resp, _ := client.Get(nextURL)
+	var nextURL string
+	userString := []byte("asdf=" + us + "&fdsa=" + pw + "&submit=Anmelden")
+	resp, _ := client.Post(loginURL, "application/x-www-form-urlencoded", bytes.NewBuffer(userString))
+	for i := 0; i < 3; i++ {
 		if resp.StatusCode == 200 {
 			break
 		} else {
 			nextURL = resp.Header.Get("Location")
+			log.Println("Die nächste URL ist: " + nextURL)
+			resp, _ = client.Get(nextURL)
 		}
+	}
+	if resp.StatusCode != 200 {
+		return nil, errors.New("Nicht 200!")
+	}
+
+	data, _ := ioutil.ReadAll(resp.Body)
+	if strings.Contains(string(data), us) {
+		log.Println("Login war erfolgreich")
 	}
 
 	//safe first cookie
-	url1, err := url.Parse(SSOFirstCookieUrl)
+	url1, err := url.Parse(CoockieURL)
 	if err != nil {
 		return nil, err
 	}
-	firstCookie := CookieJar.Cookies(url1)[0]
+	Coockie := CookieJar.Cookies(url1)[0]
 	log.Println("First Cookie for " + us)
 
-	//getting second cookie and params
-	var resp *http.Response
-	nextURL = LoginURL
-	for i := 0; i < 10; i++ {
-		resp, _ = client.Post(nextURL, "", nil)
-		if resp.StatusCode == 200 {
-			break
-		} else {
-			nextURL = resp.Header.Get("Location")
-		}
-	}
-
-	//second cookie
-	url2, err := url.Parse(SSOSecondCookieURL)
-	if err != nil {
-		return nil, err
-	}
-	secondCookie := CookieJar.Cookies(url2)[0]
-	fmt.Println("Second Cookie for " + us)
-
-	//params
-	defer resp.Body.Close()
-	c, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
-	}
-	data := html.UnescapeString(string(c))
-	getvalue := regexp.MustCompile("value=\".*\"")
-	values := getvalue.FindAllStringSubmatch(data, -1)
-	values[0][0] = strings.TrimSuffix(values[0][0], "\"")
-	values[0][0] = strings.TrimPrefix(values[0][0], "value=\"")
-	values[1][0] = strings.TrimSuffix(values[1][0], "\"")
-	values[1][0] = strings.TrimPrefix(values[1][0], "value=\"")
-
-	v := url.Values{
-		"SAMLResponse": {values[1][0]},
-		"RelayState":   {values[0][0]},
-	}
-
-	body := strings.NewReader(v.Encode())
-	fmt.Println("Values for " + us)
-
-	//adding values and cookies to request
-	req, err := http.NewRequest("POST", GetFinalCookieURL, body)
-	if err != nil {
-		return nil, err
-	}
-	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
-	req.AddCookie(firstCookie)
-	req.AddCookie(secondCookie)
-	resp, err = client.Do(req)
-	if err != nil {
-		return nil, err
-	}
-
-	//we got the real cookie
-	url3, err := url.Parse("https://lsf.ovgu.de/qislsf")
-	if err != nil {
-		return nil, err
-	}
-	finalCookie := CookieJar.Cookies(url3)[0]
-	fmt.Println("final Cookie :) for " + us)
-
-	return finalCookie, nil
+	return Coockie, nil
 }
 
 func asiGetter(finalCookie *http.Cookie, httpClient *http.Client) (string, error) {
-	AsiURL := "https://lsf.ovgu.de/qislsf/rds?state=user&type=1"
+	AsiURL := "https://lsf.ovgu.de/qislsf/rds?state=user&type=0"
 	LinkPrüfungsverwaltung := "https://lsf.ovgu.de/qislsf/rds?state=change&type=1&moduleParameter=studyPOSMenu&nextdir=change&next=menu.vm&subdir=applications&xml=menu&purge=y&navigationPosition=functions%2CstudyPOSMenu&breadcrumb=studyPOSMenu&topitem=functions&subitem=studyPOSMenu"
 
 	req, err := http.NewRequest("GET", AsiURL, nil)
@@ -187,6 +145,9 @@ func asiGetter(finalCookie *http.Cookie, httpClient *http.Client) (string, error
 	if err != nil {
 		return "", err
 	}
+
+	// data, err := ioutil.ReadAll(resp.Body)
+	// fmt.Println(string(data))
 
 	//get asi
 	req, err = http.NewRequest("GET", LinkPrüfungsverwaltung, nil)
@@ -201,12 +162,13 @@ func asiGetter(finalCookie *http.Cookie, httpClient *http.Client) (string, error
 	reg := regexp.MustCompile("asi=(.+?)\"")
 	defer resp.Body.Close()
 	data, err := ioutil.ReadAll(resp.Body)
+	//log.Println(data)
 	if err != nil {
 		return "", err
 	}
 	asis := reg.FindAllString(string(data), -1)
 	asis[0] = strings.TrimSuffix(asis[0], "\"")
-	fmt.Println("Asi :)")
+	log.Println("Asi :)")
 	return asis[0], nil
 }
 
