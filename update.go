@@ -6,12 +6,9 @@ import (
 	"log"
 	"net/smtp"
 	"os"
-	"time"
 
 	"github.com/spf13/viper"
 	mailgun "gopkg.in/mailgun/mailgun-go.v1"
-
-	"github.com/gin-gonic/gin"
 
 	"github.com/zottelchin/Notenservice/ovgunoten"
 )
@@ -21,11 +18,6 @@ func main() {
 	err := viper.ReadInConfig()
 	if err != nil {
 		log.Println(err.Error())
-	}
-	viper.SetDefault("updateIntervall", 60)
-
-	if viper.GetBool("webpage") {
-		go web()
 	}
 	routine()
 }
@@ -71,28 +63,25 @@ func send(neu []ovgunoten.Klausur) {
 }
 
 func routine() {
-	for {
-		log.Println("Starting Routine...")
-		tmp := ovgunoten.NotenAbrufen(viper.GetString("lsf.user"), viper.GetString("lsf.password"))
 
-		if len(tmp) == 0 {
-			senderr("Leeres Array aus package ovgunoten.")
-		} else {
-			log.Println("Got Grades")
-			log.Printf("Antwort: %s\n", ovgunoten.NotenAlsString(tmp))
-		}
+	log.Println("Starting Routine...")
+	tmp := ovgunoten.NotenAbrufen(viper.GetString("lsf.user"), viper.GetString("lsf.password"))
 
-		diff := difference(get(), tmp)
-		log.Printf("Differenz: %s\n", ovgunoten.NotenAlsString(diff))
-
-		if len(diff) > 0 {
-			send(diff)
-			save(diff)
-		}
-
-		log.Printf("Ich schlafe jetzt für: %d Minuten", viper.GetDuration("updateIntervall"))
-		time.Sleep(viper.GetDuration("updateIntervall") * time.Minute)
+	if len(tmp) == 0 {
+		senderr("Leeres Array aus package ovgunoten.")
+	} else {
+		log.Println("Got Grades")
+		log.Printf("Antwort: %s\n", ovgunoten.NotenAlsString(tmp))
 	}
+
+	diff := difference(get(), tmp)
+	log.Printf("Differenz: %s\n", ovgunoten.NotenAlsString(diff))
+
+	if len(diff) > 0 {
+		send(diff)
+		save(diff)
+	}
+
 }
 
 func difference(alt []ovgunoten.Klausur, neu []ovgunoten.Klausur) []ovgunoten.Klausur {
@@ -135,7 +124,7 @@ func senderr(err string) {
 		mg := mailgun.NewMailgun(viper.GetString("mailgun.domain"), viper.GetString("mailgun.api-key"), "")
 		m := mg.NewMessage(
 			viper.GetString("mailgun.sender-name")+" <no-reply@"+viper.GetString("mailgun.domain")+">",
-			viper.GetString("mailgun.subject"),
+			"Fehlermeldung Notenservice!",
 			"Hey, \n\n Im Notenservie ist ein Fehler aufgetreten: \n\n"+
 				err+
 				"\n\n Gehe auf "+viper.GetString("domain")+" um alle deine Noten in der Übersicht zu sehen.",
@@ -175,23 +164,4 @@ func get() []ovgunoten.Klausur {
 	json.Unmarshal(byteValue, &res)
 	log.Printf("Aus der Datei: %s\n", ovgunoten.NotenAlsString(res))
 	return res
-}
-
-func web() {
-	log.Println("Starting Webserver...")
-	gin.SetMode(gin.ReleaseMode)
-	router := gin.Default()
-	router.StaticFile("/", "frontend/notenuebersicht.html")
-	router.StaticFile("/milligram.min.css", "frontend/milligram.min.css")
-	router.StaticFile("/vue.min.js", "frontend/vue.min.js")
-	router.StaticFile("/favicon.ico", "frontend/favicon.ico")
-	router.StaticFile("/favicon.png", "frontend/favicon.png")
-	router.GET("/von/me", func(c *gin.Context) {
-		c.JSON(200, gin.H{
-			"noten": get(),
-			//"akutualisiert_um": aktuallisiert,
-			//"stand":            stand,
-		})
-	})
-	router.Run(":3412")
 }

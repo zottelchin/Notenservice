@@ -1,0 +1,9 @@
+[Unit]
+Description=Notenservice Updater
+
+[Timer]
+OnBootSec=5min
+OnUnitInactiveSec=30min
+
+[Install]
+WantedBy=basic.target

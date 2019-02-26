@@ -3,7 +3,7 @@ Description=Noten Service Server
 
 [Service]
 Type=simple
-ExecStart=/var/noten/Notenservice
+ExecStart=/var/noten/server
 Restart=on-failure
 WorkingDirectory=/var/noten
 

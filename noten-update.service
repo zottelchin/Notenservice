@@ -1,0 +1,10 @@
+[Unit]
+Description=Notenservice Updater
+
+[Service]
+Type=oneshot
+WorkingDirectory=/var/noten
+ExecStart=/var/noten/update
+
+[Install]
+WantedBy=basic.target
