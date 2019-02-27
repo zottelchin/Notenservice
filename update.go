@@ -79,7 +79,7 @@ func routine() {
 
 	if len(diff) > 0 {
 		send(diff)
-		save(diff)
+		save(tmp)
 	}
 
 }
