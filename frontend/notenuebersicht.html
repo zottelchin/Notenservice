@@ -119,7 +119,7 @@
                     let total = [];
 
                     Object.entries(this.noten).forEach(([key, val]) => {
-                        total.push(parseInt(val.CP)) // the value of the current key.
+                        total.push(isNaN(parseInt(val.CP)) ? 0 : parseInt(val.CP)) // the value of the current key.
                     });
 
                     return total.reduce(function (total, num) { return total + num }, 0);
